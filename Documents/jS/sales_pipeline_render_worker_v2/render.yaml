@@ -1,0 +1,8 @@
+services:
+  - type: worker
+    name: sales-audio-pipeline
+    env: python
+    plan: free
+    buildCommand: ""
+    startCommand: python3 sales_pipeline_FULL_WITH_COSTS.py
+    autoDeploy: true
