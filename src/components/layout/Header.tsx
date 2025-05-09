@@ -2,17 +2,55 @@ import React from 'react';
 import { 
   AppBar, 
   Toolbar, 
-  Typography, 
-  IconButton, 
   Box,
-  Avatar,
-  Menu,
-  MenuItem,
-  Tooltip
+  Button,
+  IconButton,
+  useMediaQuery,
+  useTheme,
+  styled
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import GridViewIcon from '@mui/icons-material/GridView';
+import InsightsIcon from '@mui/icons-material/Insights';
+import WorkspacesIcon from '@mui/icons-material/Workspaces';
+import { Link as RouterLink } from 'react-router-dom';
+
+const Logo = styled('div')(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  fontSize: '1.5rem',
+  fontWeight: 700,
+  color: theme.palette.common.white,
+  textDecoration: 'none',
+  marginRight: theme.spacing(3),
+  '& span.highlight': {
+    color: theme.palette.primary.main,
+  }
+}));
+
+const StyledButton = styled(Button)(({ theme }) => ({
+  marginLeft: theme.spacing(1),
+  borderRadius: '9999px',
+  padding: '8px 24px',
+  fontWeight: 600,
+}));
+
+// Updated NavItem to use React Router directly
+const NavItem = styled(RouterLink)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  marginRight: theme.spacing(2),
+  color: theme.palette.common.white,
+  fontWeight: 500,
+  textDecoration: 'none',
+  padding: theme.spacing(1),
+  borderRadius: theme.shape.borderRadius,
+  '&:hover': {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  },
+}));
 
 interface HeaderProps {
   open: boolean;
@@ -20,89 +58,96 @@ interface HeaderProps {
   toggleDrawer: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ open, drawerWidth, toggleDrawer }) => {
-  const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
+const Header: React.FC<HeaderProps> = ({ toggleDrawer }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  
+  // Create gradient button with direct styling
+  const GradientButton = styled(RouterLink)(({ theme }) => ({
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+    color: theme.palette.common.white,
+    textDecoration: 'none',
+    fontWeight: 600,
+    padding: '10px 24px',
+    borderRadius: '9999px',
+    '&:hover': {
+      background: `linear-gradient(90deg, ${theme.palette.primary.dark} 0%, ${theme.palette.secondary.dark} 100%)`,
+    },
+  }));
 
-  const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorElUser(event.currentTarget);
-  };
-
-  const handleCloseUserMenu = () => {
-    setAnchorElUser(null);
-  };
+  const OutlinedButton = styled(RouterLink)(({ theme }) => ({
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    border: `1px solid ${theme.palette.primary.main}`,
+    color: theme.palette.primary.main,
+    textDecoration: 'none',
+    fontWeight: 600,
+    padding: '8px 24px',
+    borderRadius: '9999px',
+    '&:hover': {
+      backgroundColor: 'rgba(0, 226, 195, 0.08)',
+    },
+  }));
 
   return (
     <AppBar
       position="fixed"
       sx={{
-        width: { sm: `calc(100% - ${drawerWidth}px)` },
-        ml: { sm: `${drawerWidth}px` },
-        transition: theme => theme.transitions.create(['margin', 'width'], {
-          easing: theme.transitions.easing.sharp,
-          duration: theme.transitions.duration.leavingScreen,
-        }),
-        ...(open && {
-          width: `calc(100% - ${drawerWidth}px)`,
-          marginLeft: `${drawerWidth}px`,
-          transition: theme => theme.transitions.create(['margin', 'width'], {
-            easing: theme.transitions.easing.easeOut,
-            duration: theme.transitions.duration.enteringScreen,
-          }),
-        }),
+        zIndex: theme.zIndex.drawer + 1,
       }}
     >
       <Toolbar>
-        <IconButton
-          color="inherit"
-          aria-label="open drawer"
-          edge="start"
-          onClick={toggleDrawer}
-          sx={{ mr: 2, display: { sm: 'none' } }}
-        >
-          <MenuIcon />
-        </IconButton>
-        <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-          RepSpheres 2025
-        </Typography>
+        {isMobile && (
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            edge="start"
+            onClick={toggleDrawer}
+            sx={{ mr: 2 }}
+          >
+            <MenuIcon />
+          </IconButton>
+        )}
+        
+        <RouterLink to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+          <Logo>
+            Rep<span className="highlight">Spheres</span>
+          </Logo>
+        </RouterLink>
+
+        {!isMobile && (
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <NavItem to="/market-insights">
+              <InsightsIcon sx={{ mr: 1 }} />
+              Market Insights
+            </NavItem>
+            <NavItem to="/crm">
+              <GridViewIcon sx={{ mr: 1 }} />
+              CRM
+            </NavItem>
+            <NavItem to="/workspace">
+              <WorkspacesIcon sx={{ mr: 1 }} />
+              Workspace
+            </NavItem>
+          </Box>
+        )}
+        
+        <Box sx={{ flexGrow: 1 }} />
         
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <IconButton color="inherit" sx={{ mr: 2 }}>
-            <NotificationsIcon />
-          </IconButton>
+          <OutlinedButton to="/login">
+            <PersonOutlineIcon sx={{ mr: 1 }} />
+            Log In
+          </OutlinedButton>
           
-          <Tooltip title="Open settings">
-            <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-              <Avatar>
-                <AccountCircleIcon />
-              </Avatar>
-            </IconButton>
-          </Tooltip>
-          <Menu
-            sx={{ mt: '45px' }}
-            id="menu-appbar"
-            anchorEl={anchorElUser}
-            anchorOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
-            }}
-            keepMounted
-            transformOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
-            }}
-            open={Boolean(anchorElUser)}
-            onClose={handleCloseUserMenu}
-          >
-            <MenuItem onClick={handleCloseUserMenu}>
-              <Typography textAlign="center">Profile</Typography>
-            </MenuItem>
-            <MenuItem onClick={handleCloseUserMenu}>
-              <Typography textAlign="center">Settings</Typography>
-            </MenuItem>
-            <MenuItem onClick={handleCloseUserMenu}>
-              <Typography textAlign="center">Logout</Typography>
-            </MenuItem>
-          </Menu>
+          <GradientButton to="/signup" sx={{ ml: 2 }}>
+            Sign Up
+            <ArrowForwardIcon sx={{ ml: 1 }} />
+          </GradientButton>
         </Box>
       </Toolbar>
     </AppBar>

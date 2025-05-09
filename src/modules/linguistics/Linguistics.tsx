@@ -2,20 +2,22 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Box, Typography, Tabs, Tab } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import Contacts from './Contacts';
-import Companies from './Companies';
-import Linguistics from '../linguistics/Linguistics';
 
-const CRM: React.FC = () => {
+// Importing subcomponents
+import Translator from './Translator';
+import AIChat from './AIChat';
+import Templates from './Templates';
+
+const Linguistics: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [value, setValue] = React.useState(0);
 
   React.useEffect(() => {
     const path = location.pathname;
-    if (path.includes('/companies')) {
+    if (path.includes('/ai-chat')) {
       setValue(1);
-    } else if (path.includes('/linguistics')) {
+    } else if (path.includes('/templates')) {
       setValue(2);
     } else {
       setValue(0);
@@ -26,39 +28,39 @@ const CRM: React.FC = () => {
     setValue(newValue);
     switch (newValue) {
       case 0:
-        navigate('/crm/contacts');
+        navigate('/linguistics/translator');
         break;
       case 1:
-        navigate('/crm/companies');
+        navigate('/linguistics/ai-chat');
         break;
       case 2:
-        navigate('/crm/linguistics');
+        navigate('/linguistics/templates');
         break;
       default:
-        navigate('/crm/contacts');
+        navigate('/linguistics/translator');
     }
   };
 
   return (
     <Box sx={{ width: '100%' }}>
       <Typography variant="h4" component="h1" gutterBottom>
-        Customer Relationship Management
+        Linguistics
       </Typography>
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs value={value} onChange={handleChange} aria-label="crm tabs">
-          <Tab label="Contacts" />
-          <Tab label="Companies" />
-          <Tab label="Linguistics" />
+        <Tabs value={value} onChange={handleChange} aria-label="linguistics tabs">
+          <Tab label="Translator" />
+          <Tab label="AI Chat" />
+          <Tab label="Templates" />
         </Tabs>
       </Box>
       <Routes>
-        <Route path="/" element={<Contacts />} />
-        <Route path="/contacts" element={<Contacts />} />
-        <Route path="/companies" element={<Companies />} />
-        <Route path="/linguistics/*" element={<Linguistics />} />
+        <Route path="/" element={<Translator />} />
+        <Route path="/translator" element={<Translator />} />
+        <Route path="/ai-chat" element={<AIChat />} />
+        <Route path="/templates" element={<Templates />} />
       </Routes>
     </Box>
   );
 };
 
-export default CRM;
+export default Linguistics;

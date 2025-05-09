@@ -2,9 +2,34 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Box, Typography, Tabs, Tab } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import Dashboard from './Dashboard';
-import Trends from './Trends';
-import Reports from './Reports';
+
+// Will be replaced with actual market insights components
+const Dashboard = () => (
+  <Box p={3}>
+    <Typography variant="h5">Market Insights Dashboard</Typography>
+    <Typography variant="body1" mt={2}>
+      This dashboard provides an overview of key market trends and insights.
+    </Typography>
+  </Box>
+);
+
+const Trends = () => (
+  <Box p={3}>
+    <Typography variant="h5">Market Trends</Typography>
+    <Typography variant="body1" mt={2}>
+      This section displays detailed analytics on emerging market trends and patterns.
+    </Typography>
+  </Box>
+);
+
+const Competitors = () => (
+  <Box p={3}>
+    <Typography variant="h5">Competitor Analysis</Typography>
+    <Typography variant="body1" mt={2}>
+      This section provides detailed information about market competitors and comparative analysis.
+    </Typography>
+  </Box>
+);
 
 const MarketInsights: React.FC = () => {
   const navigate = useNavigate();
@@ -15,7 +40,7 @@ const MarketInsights: React.FC = () => {
     const path = location.pathname;
     if (path.includes('/trends')) {
       setValue(1);
-    } else if (path.includes('/reports')) {
+    } else if (path.includes('/competitors')) {
       setValue(2);
     } else {
       setValue(0);
@@ -32,7 +57,7 @@ const MarketInsights: React.FC = () => {
         navigate('/market-insights/trends');
         break;
       case 2:
-        navigate('/market-insights/reports');
+        navigate('/market-insights/competitors');
         break;
       default:
         navigate('/market-insights/dashboard');
@@ -48,14 +73,14 @@ const MarketInsights: React.FC = () => {
         <Tabs value={value} onChange={handleChange} aria-label="market insights tabs">
           <Tab label="Dashboard" />
           <Tab label="Trends" />
-          <Tab label="Reports" />
+          <Tab label="Competitors" />
         </Tabs>
       </Box>
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/trends" element={<Trends />} />
-        <Route path="/reports" element={<Reports />} />
+        <Route path="/competitors" element={<Competitors />} />
       </Routes>
     </Box>
   );

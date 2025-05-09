@@ -2,20 +2,20 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Box, Typography, Tabs, Tab } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import Contacts from './Contacts';
-import Companies from './Companies';
-import Linguistics from '../linguistics/Linguistics';
+import Projects from './Projects';
+import Tasks from './Tasks';
+import Calendar from './Calendar';
 
-const CRM: React.FC = () => {
+const Workspace: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [value, setValue] = React.useState(0);
 
   React.useEffect(() => {
     const path = location.pathname;
-    if (path.includes('/companies')) {
+    if (path.includes('/tasks')) {
       setValue(1);
-    } else if (path.includes('/linguistics')) {
+    } else if (path.includes('/calendar')) {
       setValue(2);
     } else {
       setValue(0);
@@ -26,39 +26,39 @@ const CRM: React.FC = () => {
     setValue(newValue);
     switch (newValue) {
       case 0:
-        navigate('/crm/contacts');
+        navigate('/workspace/projects');
         break;
       case 1:
-        navigate('/crm/companies');
+        navigate('/workspace/tasks');
         break;
       case 2:
-        navigate('/crm/linguistics');
+        navigate('/workspace/calendar');
         break;
       default:
-        navigate('/crm/contacts');
+        navigate('/workspace/projects');
     }
   };
 
   return (
     <Box sx={{ width: '100%' }}>
       <Typography variant="h4" component="h1" gutterBottom>
-        Customer Relationship Management
+        Workspace
       </Typography>
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs value={value} onChange={handleChange} aria-label="crm tabs">
-          <Tab label="Contacts" />
-          <Tab label="Companies" />
-          <Tab label="Linguistics" />
+        <Tabs value={value} onChange={handleChange} aria-label="workspace tabs">
+          <Tab label="Projects" />
+          <Tab label="Tasks" />
+          <Tab label="Calendar" />
         </Tabs>
       </Box>
       <Routes>
-        <Route path="/" element={<Contacts />} />
-        <Route path="/contacts" element={<Contacts />} />
-        <Route path="/companies" element={<Companies />} />
-        <Route path="/linguistics/*" element={<Linguistics />} />
+        <Route path="/" element={<Projects />} />
+        <Route path="/projects" element={<Projects />} />
+        <Route path="/tasks" element={<Tasks />} />
+        <Route path="/calendar" element={<Calendar />} />
       </Routes>
     </Box>
   );
 };
 
-export default CRM;
+export default Workspace;

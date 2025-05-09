@@ -2,8 +2,25 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Box, Typography, Tabs, Tab } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import Performance from './Performance';
-import Metrics from './Metrics';
+
+// Will be replaced with actual analytics components
+const Performance = () => (
+  <Box p={3}>
+    <Typography variant="h5">Performance Analytics</Typography>
+    <Typography variant="body1" mt={2}>
+      This section will display performance metrics and KPIs for the system.
+    </Typography>
+  </Box>
+);
+
+const Metrics = () => (
+  <Box p={3}>
+    <Typography variant="h5">Metrics Dashboard</Typography>
+    <Typography variant="body1" mt={2}>
+      This section will show various metrics and analytics data visualizations.
+    </Typography>
+  </Box>
+);
 
 const Analytics: React.FC = () => {
   const navigate = useNavigate();
