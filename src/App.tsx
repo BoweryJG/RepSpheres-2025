@@ -8,12 +8,13 @@ import MarketInsights from './modules/marketInsights/MarketInsights';
 import Analytics from './modules/analytics/Analytics';
 import Workspace from './modules/workspace/Workspace';
 import Linguistics from './modules/linguistics/Linguistics';
+import Landing from './pages/Landing';
 
 const App: React.FC = () => {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
-        <Route index element={<Dashboard />} />
+        <Route index element={<Landing />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="crm/*" element={<CRM />} />
         <Route path="market-insights/*" element={<MarketInsights />} />
