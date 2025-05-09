@@ -1,43 +1,69 @@
-import React from 'react';
-import { Routes, Route } from 'react-router-dom';
-import { Box, Typography, Tabs, Tab } from '@mui/material';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Box, Typography, Tab, Tabs } from '@mui/material';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import ChatIcon from '@mui/icons-material/Chat';
+import TranslateIcon from '@mui/icons-material/Translate';
+import DescriptionIcon from '@mui/icons-material/Description';
 
-// Importing subcomponents
-import Translator from './Translator';
+// Import submodule components
 import AIChat from './AIChat';
+import Translator from './Translator';
 import Templates from './Templates';
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+const TabPanel = (props: TabPanelProps) => {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`linguistics-tabpanel-${index}`}
+      aria-labelledby={`linguistics-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ py: 3 }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
+};
 
 const Linguistics: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [value, setValue] = React.useState(0);
-
-  React.useEffect(() => {
+  const [value, setValue] = useState(() => {
     const path = location.pathname;
-    if (path.includes('/ai-chat')) {
-      setValue(1);
+    if (path.includes('/translator')) {
+      return 1;
     } else if (path.includes('/templates')) {
-      setValue(2);
+      return 2;
     } else {
-      setValue(0);
+      return 0;
     }
-  }, [location.pathname]);
+  });
 
   const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
     switch (newValue) {
       case 0:
-        navigate('/linguistics/translator');
+        navigate('/linguistics/chat');
         break;
       case 1:
-        navigate('/linguistics/ai-chat');
+        navigate('/linguistics/translator');
         break;
       case 2:
         navigate('/linguistics/templates');
         break;
       default:
-        navigate('/linguistics/translator');
+        navigate('/linguistics/chat');
     }
   };
 
@@ -46,17 +72,36 @@ const Linguistics: React.FC = () => {
       <Typography variant="h4" component="h1" gutterBottom>
         Linguistics
       </Typography>
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs value={value} onChange={handleChange} aria-label="linguistics tabs">
-          <Tab label="Translator" />
-          <Tab label="AI Chat" />
-          <Tab label="Templates" />
+      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Tabs 
+          value={value} 
+          onChange={handleChange} 
+          aria-label="linguistics tabs"
+          variant="scrollable"
+          scrollButtons="auto"
+        >
+          <Tab 
+            icon={<ChatIcon />} 
+            label="AI Chat" 
+            iconPosition="start" 
+          />
+          <Tab 
+            icon={<TranslateIcon />} 
+            label="Translator" 
+            iconPosition="start" 
+          />
+          <Tab 
+            icon={<DescriptionIcon />} 
+            label="Templates" 
+            iconPosition="start" 
+          />
         </Tabs>
       </Box>
+      
       <Routes>
-        <Route path="/" element={<Translator />} />
+        <Route path="/" element={<AIChat />} />
+        <Route path="/chat" element={<AIChat />} />
         <Route path="/translator" element={<Translator />} />
-        <Route path="/ai-chat" element={<AIChat />} />
         <Route path="/templates" element={<Templates />} />
       </Routes>
     </Box>

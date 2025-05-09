@@ -8,403 +8,434 @@ import {
   CardContent,
   CardActions,
   Button,
+  Chip,
   TextField,
+  InputAdornment,
+  IconButton,
+  Menu,
+  MenuItem,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  IconButton,
-  Chip,
-  Divider
+  CircularProgress,
+  Tabs,
+  Tab
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import AddIcon from '@mui/icons-material/Add';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import StarIcon from '@mui/icons-material/Star';
+import StarOutlineIcon from '@mui/icons-material/StarOutline';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import EditIcon from '@mui/icons-material/Edit';
 
-// Mock template data
-const templateCategories = [
-  'Follow-up Emails',
-  'Patient Communication',
-  'Treatment Information',
-  'Marketing Copy',
-  'Objection Handling',
-  'Call Scripts'
-];
-
-const initialTemplates = [
-  {
-    id: 1,
-    title: 'Appointment Follow-up',
-    content: "Dear [Patient Name],\n\nThank you for visiting [Practice Name] on [Date]. We hope your experience was positive.\n\n[Optional personalized note about treatment]\n\nIf you have any questions about your treatment or experience, please don't hesitate to contact us at [Phone Number].\n\nWe look forward to seeing you at your next appointment on [Next Appointment Date].\n\nBest regards,\n[Doctor Name]\n[Practice Name]",
-    category: 'Follow-up Emails',
-    tags: ['appointment', 'follow-up'],
-    createdAt: new Date('2025-01-15')
-  },
-  {
-    id: 2,
-    title: 'Teeth Whitening Benefits',
-    content: "Professional teeth whitening can provide numerous benefits:\n\n1. Enhanced appearance and improved smile\n2. Boosted self-confidence\n3. Removal of stubborn stains\n4. Quick and noticeable results\n5. Long-lasting effects with proper care\n\nOur professional whitening treatment is safe, effective, and customized to your specific needs. Results can last 1-3 years with proper maintenance.",
-    category: 'Treatment Information',
-    tags: ['cosmetic', 'whitening', 'benefits'],
-    createdAt: new Date('2025-02-10')
-  },
-  {
-    id: 3,
-    title: 'New Technology Call Script',
-    content: "Hello Dr. [Name],\n\nThis is [Your Name] from RepSpheres. I'm reaching out because we've recently launched a new imaging system that many practices like yours have found valuable.\n\nIt offers [key benefit 1] and [key benefit 2], which our clients have found helps them [specific outcome].\n\nI'd love to schedule a brief 15-minute demo to show you how it works. Would you have time this week for a quick conversation?\n\n[Handle objections as needed]\n\nThank you for your time, Dr. [Name].",
-    category: 'Call Scripts',
-    tags: ['sales call', 'technology', 'demo'],
-    createdAt: new Date('2025-03-22')
-  },
-  {
-    id: 4,
-    title: 'Price Objection Response',
-    content: "I understand your concern about the investment. Many of our clients initially had the same question.\n\nWhat they've found is that while there is an upfront cost of $[Amount], the system typically pays for itself within [Timeframe] through [Specific ROI mechanisms].\n\nFor example, Dr. Johnson at Riverdale Dental was able to [specific success story].\n\nWe also offer flexible financing options that allow you to spread the payments over [Terms], which many practices find makes the investment more manageable.",
-    category: 'Objection Handling',
-    tags: ['objection', 'price', 'value'],
-    createdAt: new Date('2025-04-05')
-  }
-];
-
-interface Template {
+// Type definitions
+type Template = {
   id: number;
   title: string;
   content: string;
   category: string;
   tags: string[];
-  createdAt: Date;
+  isFavorite: boolean;
+  lastModified: Date;
+};
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
 }
 
+const TabPanel: React.FC<TabPanelProps> = (props) => {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`template-tabpanel-${index}`}
+      aria-labelledby={`template-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ pt: 3 }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
+};
+
 const Templates: React.FC = () => {
-  const [templates, setTemplates] = useState<Template[]>(initialTemplates);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('All');
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openDialog, setOpenDialog] = useState(false);
-  const [currentTemplate, setCurrentTemplate] = useState<Template | null>(null);
-  const [isNewTemplate, setIsNewTemplate] = useState(true);
+  const [tabValue, setTabValue] = useState(0);
+  const [newTemplate, setNewTemplate] = useState<Partial<Template>>({
+    title: '',
+    content: '',
+    category: 'Email',
+    tags: [],
+    isFavorite: false,
+  });
 
-  // Dialog form state
-  const [formTitle, setFormTitle] = useState('');
-  const [formContent, setFormContent] = useState('');
-  const [formCategory, setFormCategory] = useState('');
-  const [formTags, setFormTags] = useState<string[]>([]);
-  const [newTag, setNewTag] = useState('');
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
 
-  const handleOpenNewDialog = () => {
-    setCurrentTemplate(null);
-    setFormTitle('');
-    setFormContent('');
-    setFormCategory(templateCategories[0]);
-    setFormTags([]);
-    setIsNewTemplate(true);
+  const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>, template: Template) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedTemplate(template);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleDialogOpen = () => {
     setOpenDialog(true);
   };
 
-  const handleOpenEditDialog = (template: Template) => {
-    setCurrentTemplate(template);
-    setFormTitle(template.title);
-    setFormContent(template.content);
-    setFormCategory(template.category);
-    setFormTags([...template.tags]);
-    setIsNewTemplate(false);
-    setOpenDialog(true);
-  };
-
-  const handleCloseDialog = () => {
+  const handleDialogClose = () => {
     setOpenDialog(false);
   };
 
-  const handleAddTag = () => {
-    if (newTag && !formTags.includes(newTag)) {
-      setFormTags([...formTags, newTag]);
-      setNewTag('');
-    }
+  const handleCreateTemplate = () => {
+    // This would be replaced with an actual API call to create a template in Supabase
+    // For now, just update the local state
+    const newId = Math.max(...templates.map(t => t.id), 0) + 1;
+    setTemplates([
+      ...templates, 
+      { 
+        ...newTemplate as Template, 
+        id: newId,
+        lastModified: new Date()
+      }
+    ]);
+    setOpenDialog(false);
+    setNewTemplate({
+      title: '',
+      content: '',
+      category: 'Email',
+      tags: [],
+      isFavorite: false,
+    });
   };
 
-  const handleRemoveTag = (tagToRemove: string) => {
-    setFormTags(formTags.filter(tag => tag !== tagToRemove));
+  const handleToggleFavorite = (id: number) => {
+    setTemplates(templates.map(template => 
+      template.id === id 
+        ? { ...template, isFavorite: !template.isFavorite }
+        : template
+    ));
   };
 
-  const handleSaveTemplate = () => {
-    if (!formTitle.trim() || !formContent.trim() || !formCategory) {
-      return; // Simple validation
-    }
-
-    if (isNewTemplate) {
-      // Create new template
-      const newTemplate: Template = {
-        id: Math.max(0, ...templates.map(t => t.id)) + 1,
-        title: formTitle,
-        content: formContent,
-        category: formCategory,
-        tags: formTags,
-        createdAt: new Date()
-      };
-      setTemplates([...templates, newTemplate]);
-    } else if (currentTemplate) {
-      // Update existing template
-      setTemplates(templates.map(template => 
-        template.id === currentTemplate.id 
-          ? { 
-              ...template, 
-              title: formTitle, 
-              content: formContent,
-              category: formCategory,
-              tags: formTags
-            } 
-          : template
-      ));
-    }
-
-    handleCloseDialog();
-  };
-
-  const handleDeleteTemplate = (id: number) => {
-    setTemplates(templates.filter(template => template.id !== id));
-  };
-
-  const handleCopyTemplate = (content: string) => {
-    navigator.clipboard.writeText(content);
-    // Could add a toast notification here
-  };
-
-  // Filter templates based on search term and category
-  const filteredTemplates = templates.filter(template => {
-    const matchesSearch = 
-      template.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      template.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      template.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+  React.useEffect(() => {
+    // This would be replaced with an actual API call to fetch templates from Supabase
+    // For example:
+    // const fetchTemplates = async () => {
+    //   try {
+    //     const { data, error } = await supabaseClient.from('templates').select('*');
+    //     if (error) throw error;
+    //     setTemplates(data);
+    //   } catch (err) {
+    //     console.error('Failed to fetch templates');
+    //   } finally {
+    //     setLoading(false);
+    //   }
+    // };
+    // 
+    // fetchTemplates();
     
-    const matchesCategory = categoryFilter === 'All' || template.category === categoryFilter;
-    
-    return matchesSearch && matchesCategory;
-  });
+    // For now, simulate API call with a timeout and mock data
+    setTimeout(() => {
+      const mockTemplates: Template[] = [
+        {
+          id: 1,
+          title: 'Sales Follow-up',
+          content: 'Hello {name},\n\nThank you for your interest in our products. I wanted to follow up on our conversation about {product}.\n\nDo you have any questions I can answer?\n\nBest regards,\n{sender}',
+          category: 'Email',
+          tags: ['sales', 'follow-up'],
+          isFavorite: true,
+          lastModified: new Date(2025, 4, 5) // May 5, 2025
+        },
+        {
+          id: 2,
+          title: 'Meeting Agenda',
+          content: '# Meeting: {meeting_title}\n\n## Date: {date}\n\n## Attendees\n- {attendee1}\n- {attendee2}\n\n## Agenda\n1. Welcome and Introduction (5 min)\n2. Project Updates (15 min)\n3. Discussion Items (20 min)\n4. Action Items (10 min)\n5. Next Steps (10 min)\n',
+          category: 'Meeting',
+          tags: ['agenda', 'planning'],
+          isFavorite: false,
+          lastModified: new Date(2025, 4, 8) // May 8, 2025
+        },
+        {
+          id: 3,
+          title: 'Customer Support Response',
+          content: 'Hello {customer_name},\n\nThank you for contacting our support team. We appreciate your patience.\n\nRegarding your issue with {issue_description}, we recommend the following steps:\n\n1. {step1}\n2. {step2}\n3. {step3}\n\nIf you continue to experience problems, please let us know.\n\nBest regards,\n{support_agent}\nCustomer Support Team',
+          category: 'Email',
+          tags: ['support', 'customer'],
+          isFavorite: true,
+          lastModified: new Date(2025, 4, 10) // May 10, 2025
+        }
+      ];
+      
+      setTemplates(mockTemplates);
+      setLoading(false);
+    }, 500);
+  }, []);
+
+  const filteredTemplates = templates.filter(template =>
+    template.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    template.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    template.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    template.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  const categories = ['All', 'Email', 'Meeting', 'Social Media', 'Other'];
+  
+  const categorizedTemplates = tabValue === 0 
+    ? filteredTemplates 
+    : filteredTemplates.filter(template => template.category === categories[tabValue]);
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5" gutterBottom sx={{ mb: 0 }}>
-          Templates Library
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h5" gutterBottom>
+          Content Templates
         </Typography>
-        <Button 
-          variant="contained" 
-          startIcon={<AddIcon />}
-          onClick={handleOpenNewDialog}
-        >
-          New Template
-        </Button>
+        <Typography variant="body1" color="text.secondary">
+          Create and manage reusable content templates for various communication needs.
+        </Typography>
       </Box>
-
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={6} md={4}>
-            <TextField
-              fullWidth
-              placeholder="Search templates..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: <SearchIcon color="action" sx={{ mr: 1 }} />,
-              }}
-              size="small"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <FormControl fullWidth size="small">
-              <InputLabel id="category-filter-label">
-                <FilterListIcon fontSize="small" sx={{ mr: 1 }} />
-                Category
-              </InputLabel>
-              <Select
-                labelId="category-filter-label"
-                id="category-filter"
-                value={categoryFilter}
-                label="Category"
-                onChange={(e) => setCategoryFilter(e.target.value)}
-              >
-                <MenuItem value="All">All Categories</MenuItem>
-                {templateCategories.map((category) => (
-                  <MenuItem key={category} value={category}>
-                    {category}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
+      
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            placeholder="Search templates..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+            size="small"
+          />
         </Grid>
-      </Paper>
+        <Grid item xs={6} md={3} sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
+          <Button
+            variant="outlined"
+            startIcon={<FilterListIcon />}
+            sx={{ width: { xs: '100%', md: 'auto' } }}
+          >
+            Filter
+          </Button>
+        </Grid>
+        <Grid item xs={6} md={3} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleDialogOpen}
+            sx={{ width: { xs: '100%', md: 'auto' } }}
+          >
+            New Template
+          </Button>
+        </Grid>
+      </Grid>
 
-      {filteredTemplates.length === 0 ? (
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
-          <Typography variant="body1" color="text.secondary">
-            No templates found matching your criteria.
-          </Typography>
-        </Paper>
-      ) : (
-        <Grid container spacing={3}>
-          {filteredTemplates.map(template => (
-            <Grid item xs={12} md={6} key={template.id}>
-              <Card>
-                <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                    <Typography variant="h6" gutterBottom>
-                      {template.title}
-                    </Typography>
-                    <Chip 
-                      label={template.category} 
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                    />
-                  </Box>
-                  
-                  <Typography variant="body2" color="text.secondary" sx={{ 
-                    mb: 2,
-                    maxHeight: '120px',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 4,
-                    WebkitBoxOrient: 'vertical'
-                  }}>
-                    {template.content}
-                  </Typography>
-                  
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
-                    {template.tags.map((tag, index) => (
-                      <Chip key={index} label={tag} size="small" />
-                    ))}
-                  </Box>
-                  
-                  <Typography variant="caption" color="text.secondary">
-                    Created: {template.createdAt.toLocaleDateString()}
-                  </Typography>
-                </CardContent>
-                
-                <Divider />
-                
-                <CardActions>
-                  <IconButton 
-                    size="small" 
-                    title="Copy template"
-                    onClick={() => handleCopyTemplate(template.content)}
-                  >
-                    <ContentCopyIcon fontSize="small" />
-                  </IconButton>
-                  <IconButton 
-                    size="small" 
-                    title="Edit template" 
-                    onClick={() => handleOpenEditDialog(template)}
-                  >
-                    <EditIcon fontSize="small" />
-                  </IconButton>
-                  <IconButton 
-                    size="small" 
-                    title="Delete template"
-                    onClick={() => handleDeleteTemplate(template.id)}
-                    color="error"
-                  >
-                    <DeleteOutlineIcon fontSize="small" />
-                  </IconButton>
-                </CardActions>
-              </Card>
-            </Grid>
+      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Tabs value={tabValue} onChange={handleTabChange}>
+          {categories.map((category, idx) => (
+            <Tab key={idx} label={category} />
           ))}
-        </Grid>
+        </Tabs>
+      </Box>
+      
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <>
+          {categories.map((category, idx) => (
+            <TabPanel key={idx} value={tabValue} index={idx}>
+              {categorizedTemplates.length > 0 ? (
+                <Grid container spacing={3}>
+                  {categorizedTemplates.map((template) => (
+                    <Grid item xs={12} sm={6} md={4} key={template.id}>
+                      <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                        <CardContent sx={{ flexGrow: 1 }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <Typography variant="h6" component="div" noWrap sx={{ mb: 1 }}>
+                              {template.title}
+                            </Typography>
+                            <Box sx={{ display: 'flex' }}>
+                              <IconButton 
+                                size="small" 
+                                onClick={() => handleToggleFavorite(template.id)}
+                                color={template.isFavorite ? 'warning' : 'default'}
+                              >
+                                {template.isFavorite ? <StarIcon /> : <StarOutlineIcon />}
+                              </IconButton>
+                              <IconButton size="small" onClick={(e) => handleMenuClick(e, template)}>
+                                <MoreVertIcon />
+                              </IconButton>
+                            </Box>
+                          </Box>
+                          <Chip 
+                            label={template.category} 
+                            size="small" 
+                            color="primary" 
+                            variant="outlined"
+                            sx={{ mb: 2 }}
+                          />
+                          <Typography 
+                            variant="body2" 
+                            color="text.secondary" 
+                            sx={{ 
+                              mb: 2,
+                              minHeight: '4em',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 3,
+                              WebkitBoxOrient: 'vertical',
+                              whiteSpace: 'pre-line'
+                            }}
+                          >
+                            {template.content}
+                          </Typography>
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
+                            {template.tags.map((tag, idx) => (
+                              <Chip key={idx} label={tag} size="small" />
+                            ))}
+                          </Box>
+                          <Typography variant="caption" color="text.secondary">
+                            Last modified: {new Date(template.lastModified).toLocaleDateString()}
+                          </Typography>
+                        </CardContent>
+                        <CardActions>
+                          <Button 
+                            size="small" 
+                            startIcon={<ContentCopyIcon />}
+                            sx={{ mr: 1 }}
+                          >
+                            Use
+                          </Button>
+                          <Button 
+                            size="small" 
+                            startIcon={<EditIcon />}
+                          >
+                            Edit
+                          </Button>
+                        </CardActions>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              ) : (
+                <Paper sx={{ p: 4, textAlign: 'center' }}>
+                  <Typography variant="body1" color="text.secondary">
+                    No templates found matching your criteria.
+                  </Typography>
+                </Paper>
+              )}
+            </TabPanel>
+          ))}
+        </>
       )}
 
-      {/* Template Form Dialog */}
-      <Dialog 
-        open={openDialog} 
-        onClose={handleCloseDialog}
-        fullWidth
-        maxWidth="md"
+      {/* Template options menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
       >
-        <DialogTitle>
-          {isNewTemplate ? 'Create New Template' : 'Edit Template'}
-        </DialogTitle>
+        <MenuItem onClick={handleMenuClose}>Edit</MenuItem>
+        <MenuItem onClick={handleMenuClose}>Duplicate</MenuItem>
+        <MenuItem onClick={handleMenuClose}>Share</MenuItem>
+        <MenuItem onClick={handleMenuClose} sx={{ color: 'error.main' }}>Delete</MenuItem>
+      </Menu>
+
+      {/* New Template Dialog */}
+      <Dialog open={openDialog} onClose={handleDialogClose} maxWidth="md" fullWidth>
+        <DialogTitle>Create New Template</DialogTitle>
         <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Template Title"
-            type="text"
-            fullWidth
-            value={formTitle}
-            onChange={(e) => setFormTitle(e.target.value)}
-            sx={{ mb: 2 }}
-          />
-          
-          <FormControl fullWidth margin="dense" sx={{ mb: 2 }}>
-            <InputLabel id="template-category-label">Category</InputLabel>
-            <Select
-              labelId="template-category-label"
-              id="template-category"
-              value={formCategory}
-              label="Category"
-              onChange={(e) => setFormCategory(e.target.value)}
-            >
-              {templateCategories.map((category) => (
-                <MenuItem key={category} value={category}>
-                  {category}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          
-          <TextField
-            label="Template Content"
-            multiline
-            rows={10}
-            fullWidth
-            value={formContent}
-            onChange={(e) => setFormContent(e.target.value)}
-            margin="dense"
-            sx={{ mb: 2 }}
-          />
-          
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="body2" gutterBottom>
-              Tags
-            </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
-              {formTags.map((tag, index) => (
-                <Chip 
-                  key={index} 
-                  label={tag} 
-                  size="small"
-                  onDelete={() => handleRemoveTag(tag)}
-                />
-              ))}
-            </Box>
-            <Box sx={{ display: 'flex', gap: 1 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
               <TextField
-                size="small"
-                label="Add tag"
-                value={newTag}
-                onChange={(e) => setNewTag(e.target.value)}
+                autoFocus
+                margin="dense"
+                label="Template Title"
+                fullWidth
+                variant="outlined"
+                value={newTemplate.title}
+                onChange={(e) => setNewTemplate({...newTemplate, title: e.target.value})}
+                sx={{ mb: 1 }}
               />
-              <Button 
-                variant="outlined" 
-                onClick={handleAddTag}
-                disabled={!newTag}
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                select
+                margin="dense"
+                label="Category"
+                fullWidth
+                variant="outlined"
+                value={newTemplate.category}
+                onChange={(e) => setNewTemplate({...newTemplate, category: e.target.value})}
               >
-                Add
-              </Button>
-            </Box>
-          </Box>
+                {categories.slice(1).map((category) => (
+                  <MenuItem key={category} value={category}>{category}</MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                margin="dense"
+                label="Tags (comma separated)"
+                fullWidth
+                variant="outlined"
+                placeholder="e.g. sales, follow-up"
+                onBlur={(e) => {
+                  if (e.target.value) {
+                    const tagsArray = e.target.value.split(',').map(tag => tag.trim());
+                    setNewTemplate({...newTemplate, tags: tagsArray});
+                  }
+                }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                margin="dense"
+                label="Template Content"
+                fullWidth
+                multiline
+                rows={10}
+                variant="outlined"
+                value={newTemplate.content}
+                onChange={(e) => setNewTemplate({...newTemplate, content: e.target.value})}
+                placeholder="Enter your template content here. Use {variable} for placeholders."
+                sx={{ mb: 1 }}
+              />
+            </Grid>
+          </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleSaveTemplate} variant="contained">
-            Save
+          <Button onClick={handleDialogClose}>Cancel</Button>
+          <Button 
+            variant="contained" 
+            onClick={handleCreateTemplate}
+            disabled={!newTemplate.title || !newTemplate.content}
+          >
+            Create Template
           </Button>
         </DialogActions>
       </Dialog>

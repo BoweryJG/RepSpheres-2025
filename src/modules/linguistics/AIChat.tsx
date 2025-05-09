@@ -1,256 +1,339 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  Box, 
-  Typography, 
-  TextField, 
-  Button, 
-  Paper, 
+import {
+  Box,
+  Typography,
+  Paper,
+  TextField,
+  Button,
   Avatar,
-  Card,
-  CardContent,
-  Grid,
+  CircularProgress,
+  Divider,
   Chip,
-  IconButton
+  Grid,
+  IconButton,
+  Menu,
+  MenuItem,
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
-import SmartToyIcon from '@mui/icons-material/SmartToy';
-import PersonIcon from '@mui/icons-material/Person';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
-interface Message {
+// Message interface
+type Message = {
   id: number;
-  text: string;
-  isBot: boolean;
+  content: string;
+  role: 'user' | 'assistant';
   timestamp: Date;
-}
+};
 
-const samplePrompts = [
-  "Summarize this content for me",
-  "Draft an email to a client",
-  "Generate ideas for marketing campaign",
-  "Create a product description",
-  "Help me write a response to a complaint"
+// Define AI models
+const aiModels = [
+  { id: 'gpt-4o', name: 'GPT-4o', description: 'Advanced language model with multimodal capabilities' },
+  { id: 'gpt-4', name: 'GPT-4', description: 'High-performance language model for complex tasks' },
+  { id: 'gpt-3.5', name: 'GPT-3.5 Turbo', description: 'Fast and efficient language model for most tasks' }
 ];
 
 const AIChat: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
-    { 
-      id: 1, 
-      text: "Hello! I'm your AI assistant. How can I help you today?", 
-      isBot: true, 
-      timestamp: new Date() 
+    {
+      id: 1,
+      content: "Hello! I'm your AI assistant. How can I help you today?",
+      role: 'assistant',
+      timestamp: new Date()
     }
   ]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [selectedModel, setSelectedModel] = useState(aiModels[0]);
+  const messagesEndRef = useRef<null | HTMLDivElement>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleClearChat = () => {
+    setMessages([
+      {
+        id: 1,
+        content: "Hello! I'm your AI assistant. How can I help you today?",
+        role: 'assistant',
+        timestamp: new Date()
+      }
+    ]);
+    handleMenuClose();
+  };
+
+  const handleCopyConversation = () => {
+    const conversationText = messages
+      .map((msg) => `${msg.role === 'user' ? 'You' : 'AI'}: ${msg.content}`)
+      .join('\n\n');
+    
+    navigator.clipboard.writeText(conversationText)
+      .then(() => {
+        console.log('Conversation copied to clipboard');
+      })
+      .catch((err) => {
+        console.error('Failed to copy conversation: ', err);
+      });
+    
+    handleMenuClose();
+  };
+
+  const handleDownloadConversation = () => {
+    const conversationText = messages
+      .map((msg) => `${msg.role === 'user' ? 'You' : 'AI'}: ${msg.content}`)
+      .join('\n\n');
+    
+    const blob = new Blob([conversationText], { type: 'text/plain' });
+    const href = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = href;
+    link.download = `ai-conversation-${new Date().toISOString().slice(0, 10)}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(href);
+    
+    handleMenuClose();
+  };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  const handleSendMessage = () => {
+    if (inputMessage.trim() === '') return;
     
-    // Add user message
-    const userMessage: Message = {
+    const newUserMessage: Message = {
       id: messages.length + 1,
-      text: input,
-      isBot: false,
+      content: inputMessage,
+      role: 'user',
       timestamp: new Date()
     };
     
-    setMessages(prev => [...prev, userMessage]);
-    setInput('');
-    setLoading(true);
+    setMessages([...messages, newUserMessage]);
+    setInputMessage('');
+    setIsTyping(true);
     
-    // Simulate AI response after a delay
+    // Simulate AI response with a delay
     setTimeout(() => {
-      const botResponse: Message = {
+      const aiResponse: Message = {
         id: messages.length + 2,
-        text: `This is a simulated response to: "${input}"`,
-        isBot: true,
+        content: getAIResponse(inputMessage),
+        role: 'assistant',
         timestamp: new Date()
       };
-      setMessages(prev => [...prev, botResponse]);
-      setLoading(false);
-    }, 1000);
+      
+      setMessages((prevMessages) => [...prevMessages, aiResponse]);
+      setIsTyping(false);
+    }, 1000 + Math.random() * 2000); // Random delay between 1-3 seconds
+  };
+
+  // Placeholder function to generate AI responses
+  const getAIResponse = (userMessage: string): string => {
+    const userMessageLower = userMessage.toLowerCase();
+    
+    if (userMessageLower.includes('hello') || userMessageLower.includes('hi')) {
+      return "Hello! It's nice to chat with you. How can I assist you today?";
+    } else if (userMessageLower.includes('help')) {
+      return "I'm here to help! You can ask me questions, request information, or have me assist with various tasks like drafting emails, summarizing text, or brainstorming ideas.";
+    } else if (userMessageLower.includes('thank')) {
+      return "You're welcome! If you have any more questions or need further assistance, feel free to ask.";
+    } else if (userMessageLower.includes('weather')) {
+      return "I don't have real-time access to weather information. To get the current weather, you could check a weather app or website, or integrate a weather API into this application.";
+    } else if (userMessageLower.includes('name')) {
+      return "I'm an AI assistant integrated into your workspace platform. You can think of me as your helpful digital colleague.";
+    } else {
+      return "Thank you for your message. In a fully implemented version, this would connect to an actual AI model API like OpenAI's GPT models to provide more relevant and dynamic responses. Is there something specific you'd like to know more about?";
+    }
+  };
+
+  const handleModelChange = (modelId: string) => {
+    const model = aiModels.find(model => model.id === modelId);
+    if (model) {
+      setSelectedModel(model);
+    }
+    handleMenuClose();
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      handleSendMessage();
     }
   };
 
-  const handlePromptClick = (prompt: string) => {
-    setInput(prompt);
-  };
-
-  const clearChat = () => {
-    setMessages([
-      { 
-        id: 1, 
-        text: "Hello! I'm your AI assistant. How can I help you today?", 
-        isBot: true, 
-        timestamp: new Date() 
-      }
-    ]);
-  };
-
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
-
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ height: 'calc(100vh - 200px)', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h5">
-          AI Assistant
-        </Typography>
-        <Button 
-          variant="outlined" 
-          color="error" 
-          startIcon={<DeleteOutlineIcon />}
-          onClick={clearChat}
-          size="small"
-        >
-          Clear Chat
-        </Button>
+        <Typography variant="h5">AI Chat Assistant</Typography>
+        <Box>
+          <Chip
+            label={selectedModel.name}
+            color="primary"
+            variant="outlined"
+            onClick={(e) => handleMenuClick(e as unknown as React.MouseEvent<HTMLButtonElement>)}
+            sx={{ cursor: 'pointer' }}
+          />
+          <IconButton onClick={(e) => handleMenuClick(e as unknown as React.MouseEvent<HTMLButtonElement>)}>
+            <MoreVertIcon />
+          </IconButton>
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleMenuClose}
+          >
+            <MenuItem disabled sx={{ opacity: 1 }}>
+              <Typography variant="subtitle2">Select Model</Typography>
+            </MenuItem>
+            {aiModels.map(model => (
+              <MenuItem 
+                key={model.id}
+                onClick={() => handleModelChange(model.id)}
+                selected={model.id === selectedModel.id}
+              >
+                {model.name}
+              </MenuItem>
+            ))}
+            <Divider />
+            <MenuItem onClick={handleCopyConversation}>
+              <ContentCopyIcon fontSize="small" sx={{ mr: 1 }} />
+              Copy conversation
+            </MenuItem>
+            <MenuItem onClick={handleDownloadConversation}>
+              <FileDownloadIcon fontSize="small" sx={{ mr: 1 }} />
+              Download conversation
+            </MenuItem>
+            <MenuItem onClick={handleClearChat} sx={{ color: 'error.main' }}>
+              <DeleteOutlineIcon fontSize="small" sx={{ mr: 1 }} />
+              Clear chat
+            </MenuItem>
+          </Menu>
+        </Box>
       </Box>
-
+      
       <Paper 
-        elevation={0} 
+        elevation={2} 
         sx={{ 
-          p: 2, 
-          flexGrow: 1, 
-          maxHeight: 'calc(100vh - 300px)', 
-          overflowY: 'auto',
-          backgroundColor: 'background.default',
-          borderRadius: 2,
-          mb: 2
+          flex: 1,
+          mb: 2,
+          p: 2,
+          overflow: 'auto',
+          backgroundColor: 'background.paper'
         }}
       >
         {messages.map((message) => (
-          <Box 
-            key={message.id} 
-            sx={{ 
-              display: 'flex', 
-              justifyContent: message.isBot ? 'flex-start' : 'flex-end',
-              mb: 2 
+          <Box
+            key={message.id}
+            sx={{
+              display: 'flex',
+              flexDirection: message.role === 'user' ? 'row-reverse' : 'row',
+              mb: 2,
             }}
           >
-            <Card 
-              sx={{ 
-                maxWidth: '80%', 
-                borderRadius: 2,
-                bgcolor: message.isBot ? 'background.paper' : 'primary.main',
+            <Avatar
+              sx={{
+                bgcolor: message.role === 'user' ? 'primary.main' : 'secondary.main',
+                width: 36,
+                height: 36,
+                mr: message.role === 'user' ? 0 : 1,
+                ml: message.role === 'user' ? 1 : 0,
               }}
             >
-              <CardContent sx={{ 
-                p: 2, 
-                '&:last-child': { 
-                  pb: 2 
-                },
-                display: 'flex',
-                gap: 1
-              }}>
-                {message.isBot && (
-                  <Avatar sx={{ bgcolor: 'secondary.main', width: 32, height: 32 }}>
-                    <SmartToyIcon sx={{ width: 20, height: 20 }} />
-                  </Avatar>
-                )}
-                <Box>
-                  <Typography 
-                    variant="body1" 
-                    color={message.isBot ? 'text.primary' : 'common.white'}
-                    sx={{ wordBreak: 'break-word' }}
-                  >
-                    {message.text}
-                  </Typography>
-                  <Typography 
-                    variant="caption" 
-                    color={message.isBot ? 'text.secondary' : 'rgba(255, 255, 255, 0.7)'}
-                    sx={{ display: 'block', mt: 0.5 }}
-                  >
-                    {formatTime(message.timestamp)}
-                  </Typography>
-                </Box>
-                {!message.isBot && (
-                  <Avatar sx={{ bgcolor: '#002233', width: 32, height: 32 }}>
-                    <PersonIcon sx={{ width: 20, height: 20 }} />
-                  </Avatar>
-                )}
-              </CardContent>
-            </Card>
+              {message.role === 'user' ? 'U' : 'AI'}
+            </Avatar>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 1.5,
+                maxWidth: '75%',
+                backgroundColor: message.role === 'user' ? 'primary.light' : 'grey.100',
+                color: message.role === 'user' ? 'primary.contrastText' : 'text.primary',
+                borderRadius: 2,
+              }}
+            >
+              <Typography variant="body1">{message.content}</Typography>
+              <Typography variant="caption" display="block" sx={{ mt: 0.5, opacity: 0.7 }}>
+                {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </Typography>
+            </Paper>
           </Box>
         ))}
-        {loading && (
-          <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 2 }}>
-            <Card sx={{ maxWidth: '80%', borderRadius: 2 }}>
-              <CardContent sx={{ p: 2 }}>
-                <Typography variant="body1">Thinking...</Typography>
-              </CardContent>
-            </Card>
+        
+        {isTyping && (
+          <Box sx={{ display: 'flex', mb: 2 }}>
+            <Avatar
+              sx={{
+                bgcolor: 'secondary.main',
+                width: 36,
+                height: 36,
+                mr: 1,
+              }}
+            >
+              AI
+            </Avatar>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2,
+                maxWidth: '75%',
+                backgroundColor: 'grey.100',
+                borderRadius: 2,
+              }}
+            >
+              <CircularProgress size={20} thickness={4} />
+            </Paper>
           </Box>
         )}
         <div ref={messagesEndRef} />
       </Paper>
-
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="subtitle2" sx={{ mb: 1 }}>
-          Suggested prompts:
-        </Typography>
-        <Grid container spacing={1}>
-          {samplePrompts.map((prompt, index) => (
-            <Grid item key={index}>
-              <Chip 
-                label={prompt} 
-                onClick={() => handlePromptClick(prompt)} 
-                clickable 
-                color="primary" 
-                variant="outlined"
-              />
-            </Grid>
-          ))}
-        </Grid>
-      </Box>
       
-      <Box sx={{ display: 'flex', gap: 1 }}>
+      <Paper
+        component="form"
+        sx={{ p: 1, display: 'flex', alignItems: 'center' }}
+        elevation={3}
+      >
+        <IconButton color="primary" aria-label="attach file" component="label">
+          <input hidden accept="image/*,.pdf,.txt,.doc,.docx" type="file" />
+          <AttachFileIcon />
+        </IconButton>
         <TextField
           fullWidth
-          variant="outlined"
-          placeholder="Type your message..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyPress={handleKeyPress}
           multiline
-          maxRows={4}
-          sx={{ 
-            '.MuiOutlinedInput-root': {
-              borderRadius: '24px',
-              paddingRight: '14px'
-            }
-          }}
+          maxRows={3}
+          placeholder="Type your message..."
+          variant="standard"
+          value={inputMessage}
+          onChange={(e) => setInputMessage(e.target.value)}
+          onKeyPress={handleKeyPress}
           InputProps={{
-            endAdornment: (
-              <IconButton 
-                color="primary" 
-                onClick={handleSend} 
-                disabled={!input.trim() || loading}
-                edge="end"
-              >
-                <SendIcon />
-              </IconButton>
-            ),
+            disableUnderline: true,
+            sx: { p: 1 },
           }}
         />
-      </Box>
+        <Button
+          variant="contained"
+          color="primary"
+          endIcon={<SendIcon />}
+          onClick={handleSendMessage}
+          disabled={!inputMessage.trim()}
+          sx={{ ml: 1, borderRadius: 28, px: 2 }}
+        >
+          Send
+        </Button>
+      </Paper>
     </Box>
   );
 };
